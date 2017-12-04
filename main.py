@@ -41,3 +41,81 @@ if __name__ == '__main__':
     train_scores, valid_scores = validation_curve(classification)
     # classification.fit(X_train, Y_train)
     """
+    # -----------------
+    # FRAUD DETECTION
+    # -----------------
+
+    # Under sample data sets
+    with open("data/data_set.pickle", 'rb') as handle:
+        train_x, train_y, test_x, test_y = pickle.load(handle)
+
+        # CREATE TRAINING & VALIDATION SET
+
+        idx_fraud_train = np.where(train_y[:, 0] == '0')[0]
+        idx_non_fraud_train = np.where(train_y[:, 0] == '1')[0][:len(idx_fraud_train)]
+
+        idx_fraud_valid = np.where(train_y[:, 0] == '0')[0][:50]
+        idx_non_fraud_valid = np.where(train_y[:, 0] == '1')[0][:50]
+
+        idx_fraud_test = np.where(test_y[:, 0] == '0')[0]
+        idx_non_fraud_test = np.where(test_y[:, 0] == '1')[0][:len(idx_fraud_test)]
+
+        under_sampled_idx_valid = np.concatenate((idx_non_fraud_valid, idx_fraud_valid))
+        under_sampled_idx_train = np.concatenate((idx_non_fraud_train, idx_fraud_train))
+        under_sampled_idx_test = np.concatenate((idx_non_fraud_test, idx_fraud_test))
+
+        # Shuffle the indexes
+        np.random.shuffle(under_sampled_idx_train)
+        np.random.shuffle(under_sampled_idx_test)
+        np.random.shuffle(under_sampled_idx_valid)
+
+        trunc_train_x, trunc_train_y = train_x[under_sampled_idx_train, :], \
+                                       train_y[under_sampled_idx_train, :].astype('float32')
+        trunc_train_y = np.array([1 if trunc_train_y[i][0] == 0 else 0 for i in range(trunc_train_y.shape[0])])
+
+        trunc_valid_x, trunc_valid_y = train_x[under_sampled_idx_valid, :], \
+             train_y[under_sampled_idx_valid, :].astype('float32')
+
+        trunc_test_x, trunc_test_y = test_x[under_sampled_idx_test, :], \
+                                     test_y[under_sampled_idx_test, :].astype('float32')
+        trunc_test_y = np.array([1 if trunc_test_y[i][0] == 0 else 0 for i in range(trunc_test_y.shape[0])])
+
+
+    # SVM
+    model = SVM(max_iter=10000, kernel_type='linear', C=1.0, epsilon=0.001)
+    model.fit(trunc_train_x, trunc_train_y)
+    predictions = np.int64(model.predict(trunc_test_x) >= 0)
+    conf_matrix = confusion_matrix(y_true=trunc_test_y, y_pred=predictions)
+
+    # >>>  conf_matrix
+    # >>>  [[92,  1],
+    #       [25, 68]]
+
+    # on the complete data set
+    predictions_full = np.int64(model.predict(test_x) >= 0)
+    test_y = np.array([1 if test_y[i][0] == '0' else 0 for i in range(test_y.shape[0])])
+    conf_matrix_full = confusion_matrix(y_true=test_y, y_pred=predictions_full)
+
+    # >>> conf_matrix_full
+    # >>> [[49965,    35],
+    #      [   25,    68]]
+
+    # Neural Network
+    neural_net = FeedForwardNN([trunc_train_x, trunc_train_y, trunc_valid_x,
+                               trunc_valid_y, trunc_test_x, trunc_test_y])
+    neural_net.build()
+    neural_net.train()
+    neural_net.compute_confusion_matrix()
+
+    # ---------------- #
+    # CONFUSION MATRIX #
+    #                  #
+    # [[47499  2501]   #
+    # [    9    84]]   #
+    #                  #
+    # ---------------- #
+
+
+    # Bayes here
+
+    
