@@ -1,0 +1,5 @@
+checkpoints
+data
+data_sets.pkl
+dictionary.pkl
+word_features.pkl
