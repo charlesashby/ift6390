@@ -8,10 +8,10 @@ from sklearn.model_selection import validation_curve
 
 
 if __name__ == '__main__':
-    """
-    # classification on MNIST
-    X_train, Y_train, X_valid, Y_valid, X_test, Y_test = load_mnist()
-    
+
+    # MNIST Start ---------------------------------------------------------
+    X_train, Y_train, X_valid, Y_valid, X_test, Y_test = load_mnist(one_hot=False)
+
     # Bayes Classifier
     gaussian_estimator = DiagonalGaussian(nb_dims=X_train.shape[1])
     gaussian_estimator.train(X_train)
@@ -24,28 +24,84 @@ if __name__ == '__main__':
     
     # >>> error_rate
     # >>> 0.183
-    
 
-
-    # Feed-Forward Neural Network
+    # Feed-Forward Neural Network for MNIST
     nn = FeedForwardNN([X_train, Y_train, X_valid, Y_valid, X_test, Y_test])
     nn.build()
     nn.train()
     nn.compute_confusion_matrix()
-    # >>> accuracy: 0.9800
-    
- 
-    # SVM Classifier (linear kernel)
-    X_train, Y_train, X_valid, Y_valid, X_test, Y_test = load_mnist(one_hot=False)
-    classification = svm.SVC(C=5.0, gamma=0.05, verbose=True)
-    train_scores, valid_scores = validation_curve(classification)
-    # classification.fit(X_train, Y_train)
-    """
-    # -----------------
-    # FRAUD DETECTION
-    # -----------------
 
-    # Under sample data sets
+    # >>> accuracy: 0.9800
+
+    # Support Vector Classifier for MNIST
+    # WARNING: Do not start this unless you have a lot of RAM
+
+    param_C = 5
+    param_gamma = 0.05
+    classifier = svm.SVC(C=param_C,gamma=param_gamma)
+
+    # We learn the digits on train part
+    start_time = dt.datetime.now()
+    print('Start learning at {}'.format(str(start_time)))
+    classifier.fit(X_train, Y_train)
+    end_time = dt.datetime.now()
+    print('Stop learning {}'.format(str(end_time)))
+    elapsed_time= end_time - start_time
+    print('Elapsed learning {}'.format(str(elapsed_time)))
+
+    # Class prediction on the test set
+    expected = Y_test
+    predicted = classifier.predict(X_test)
+    cm = metrics.confusion_matrix(expected, predicted)
+
+    print("Classification report for classifier %s:\n%s\n"
+          % (classifier, metrics.classification_report(expected, predicted)))
+    print("Confusion matrix:\n%s" % cm)
+    print("Accuracy={}".format(metrics.accuracy_score(expected, predicted)))
+
+    with open('log.txt', 'w') as f:
+        f.write(str(metrics.accuracy_score(expected, predicted)))
+        f.write(str(metrics.confusion_matrix(expected, predicted)))
+        f.write(str(metrics.classification_report(expected, predicted)))
+
+        #
+        #              precision    recall  f1-score   support
+        #
+        #          0       0.98      0.99      0.99       980
+        #          1       0.99      0.99      0.99      1135
+        #          2       0.98      0.98      0.98      1032
+        #          3       0.98      0.99      0.98      1010
+        #          4       0.99      0.98      0.99       982
+        #          5       0.99      0.98      0.98       892
+        #          6       0.99      0.99      0.99       958
+        #          7       0.98      0.98      0.98      1028
+        #          8       0.97      0.98      0.98       974
+        #          9       0.98      0.96      0.97      1009
+        #
+        #         avg      0.98      0.98      0.98     10000
+        #
+        #
+        #    Confusion matrix:
+        #    [[ 974    0    1    0    0    1    1    1    2    0]
+        #     [   0 1128    3    1    0    1    0    1    1    0]
+        #     [   4    0 1015    1    1    0    0    6    5    0]
+        #     [   0    0    1  996    0    4    0    5    4    0]
+        #     [   0    1    3    0  965    0    4    0    2    7]
+        #     [   2    0    1    7    1  872    3    1    4    1]
+        #     [   5    2    0    0    2    3  945    0    1    0]
+        #     [   0    3    9    1    1    0    0 1004    2    8]
+        #     [   2    0    1    6    1    2    0    2  958    2]
+        #     [   4    4    2    8    6    2    0    6    6  971]]
+        #
+        #    Accuracy=0.9828
+
+    # MNIST End ---------------------------------------------------------
+
+    # Fraud Detection Start ---------------------------------------------
+
+    # Under sample data sets for fraud detection
+    # to solve the class imbalance problem
+
     with open("data/data_set.pickle", 'rb') as handle:
         train_x, train_y, test_x, test_y = pickle.load(handle)
 
@@ -80,13 +136,14 @@ if __name__ == '__main__':
                                      test_y[under_sampled_idx_test, :].astype('float32')
         trunc_test_y = np.array([1 if trunc_test_y[i][0] == 0 else 0 for i in range(trunc_test_y.shape[0])])
 
+    # Support Vector Machine (linear kernel)
 
-    # SVM
     model = SVM(max_iter=10000, kernel_type='linear', C=1.0, epsilon=0.001)
     model.fit(trunc_train_x, trunc_train_y)
     predictions = np.int64(model.predict(trunc_test_x) >= 0)
     conf_matrix = confusion_matrix(y_true=trunc_test_y, y_pred=predictions)
 
+    # On the under-sampled test set
     # >>>  conf_matrix
     # >>>  [[92,  1],
     #       [25, 68]]
@@ -96,6 +153,7 @@ if __name__ == '__main__':
     test_y = np.array([1 if test_y[i][0] == '0' else 0 for i in range(test_y.shape[0])])
     conf_matrix_full = confusion_matrix(y_true=test_y, y_pred=predictions_full)
 
+    # On the full test set
     # >>> conf_matrix_full
     # >>> [[49965,    35],
     #      [   25,    68]]
@@ -115,7 +173,72 @@ if __name__ == '__main__':
     #                  #
     # ---------------- #
 
+    # Bayes Classifier
+    gaussian_estimator = DiagonalGaussian(nb_dims=trunc_train_x.shape[1])
+    gaussian_estimator.train(trunc_train_x)
 
-    # Bayes here
+    bayes_net = BayesClassifier(gaussian_estimator)
+    bayes_net.train(training_data=trunc_train_x, training_labels=trunc_train_y)
+    predicted_classes = bayes_net.compute_predictions(trunc_test_x)
+    correct_classes = trunc_test_y
+    error_rate = 1. - np.mean(predicted_classes == correct_classes)
+
+    # Results for Bayes Classifier goes here...
+
+    # Fraud Detection End ------------------------------------------------------------
+
+    # Sentiment Analysis Start -------------------------------------------------------
+
+    # WARNING: Do not run this unless you Have a lot of RAM
+
+    with open('sentiment_analysis_data_sets.pkl', 'rb') as f:
+        train, valid, test = pickle.load(f)
+
+    X_train, Y_train = load_to_ram(train)
+
+    # Support Vector Classifier
+
+    param_C = 5
+    param_gamma = 0.05
+    classifier = svm.SVC(C=param_C, gamma=param_gamma)
+    classifier.fit(X_train, Y_train)
+
+    X_test, Y_test = load_to_ram(test)
+    expected_classes = Y_test
+    predicted_classes = classifier.predict(X_test)
+    cm = metrics.confusion_matrix(expected_classes, predicted_classes)
+
+    # Waiting on results...
+
+    # Bayes Classifier
+
+    param_C = 5
+    param_gamma = 0.05
+    classifier = svm.SVC(C=param_C, gamma=param_gamma)
+    classifier.fit(X_train, Y_train)
+    expected = Y_test
+    predicted = classifier.predict(X_test)
+    cm = metrics.confusion_matrix(expected, predicted)
+
+    # accuracy: 0.7073875
+
+    # Neural Net
+
+    X_train = np.array(X_train)
+    Y_train = np.array(Y_train)
+    X_valid = np.array(load_to_ram(valid))
+    Y_valid = np.array(load_to_ram(valid))
+    X_test = np.array(X_test)
+    Y_test = np.array(Y_test)
+
+    neural_net = FeedForwardNN([X_train, Y_train, X_valid, Y_valid, X_test, Y_test])
+    neural_net.build()
+    neural_net.train()
+    tt = neural_net.compute_confusion_matrix()
+
+    # accuracy: 0.78036249
+
+    # Sentiment Analysis End ---------------------------------------------------------
+
 
     
