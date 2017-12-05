@@ -114,26 +114,41 @@ def shuffle_datasets(valid_perc=0.05):
         pickle.dump(dict, f)
 
 
-def create_data_set_sentiment():
-    with open('word_features.pkl', 'rb') as f:
-        word_features = pickle.load(f)
 
-    with open('data_sets.pkl', 'r') as f:
-        train, valid, test = pickle.load(f)
-    X_train = []
-    Y_train = []
-    for i, line in enumerate(train):
+def load_to_ram(data):
+    """
+    Load some data to RAM and convert
+    sentences to one-hot vectors
+
+    :param data:
+        the data set you want
+        to load
+        (list of (target, sentence)
+         tuple)
+    :return:
+        features, targets
+    """
+    X = []
+    Y = []
+
+    with open('utils/dictionary.pkl', 'rb') as f:
+        word_features = pickle.load(f)[:3000]
+
+    for i, line in enumerate(data):
         if i % 10000 == 0:
             print(i)
         data = line[1]
-        Y_train.append(int(line[0]))
+        Y.append(int(line[0]))
         zeros = np.zeros(shape=3001)
         for w in word_tokenize(data):
             if w in word_features:
                 zeros[word_features.index(w)] += 1
             else:
                 zeros[-1] += 1
-            X_train.append(zeros)
+            X.append(zeros)
+
+    return X, Y
+
 
 
 
