@@ -59,6 +59,37 @@ def load_two_moons():
            X_test,  np.array(Y_test, dtype=np.int32)
 
 
+def create_fraud_detection_data_set():
+    """ Create the data sets for fraud
+        detection
+    """
+    ones = []
+    zeros = []
+
+    with open('data/creditcard.csv', 'r') as f:
+        data = csv.reader(f, delimiter=',')
+        for line in data:
+            if line[-1] == '0':
+                zeros.append(line[:-1] + [1, 0])
+            elif line[-1] == '1':
+                ones.append(line[:-1] + [0, 1])
+
+    training_set = np.array(ones[:-93] + zeros[:-50000])
+    test_set = np.array(ones[-93:] + zeros[-50000:])
+
+    test_set_x = test_set[:, :-2]
+    test_set_y = test_set[:, -2:]
+
+    training_set_x = training_set[:, :-2]
+    training_set_y = training_set[:, -2:]
+
+    data_set = [training_set_x, training_set_y,
+                test_set_x, test_set_y]
+
+    with open('data/data_set_fraud.pickle', 'wb') as handle:
+        pickle.dump(data_set, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        
 def shuffle_datasets(valid_perc=0.05):
     """ Shuffle the dataset """
 
@@ -112,7 +143,6 @@ def shuffle_datasets(valid_perc=0.05):
     dict = words.most_common(20000)
     with open('dictionary.pkl', 'wb') as f:
         pickle.dump(dict, f)
-
 
 
 def load_to_ram(data):
