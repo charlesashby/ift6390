@@ -208,7 +208,18 @@ if __name__ == '__main__':
     predicted_classes = classifier.predict(X_test)
     cm = metrics.confusion_matrix(expected_classes, predicted_classes)
 
-    # Waiting on results...
+    # Waiting on results... Best accuracy so far: batch_size: 25,000 12 processes
+    # accuracy: 0.713375
+    # 
+    #   [[20939 19101]
+    #    [ 3829 36131]]             
+    # 
+    #            precision    recall  f1-score   support
+    # 
+    #       0       0.85      0.52      0.65     40040
+    #       1       0.65      0.90      0.76     39960
+    # 
+    #     avg       0.75      0.71      0.70     80000
 
     # Bayes Classifier
 
