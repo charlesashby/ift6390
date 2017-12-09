@@ -180,6 +180,25 @@ def load_to_ram(data):
     return X, Y
 
 
+def svm_classifier_worker(X_train, Y_train, i, q, c=0.1):
+    """ Worker method for training SVMs on
+        the sentiment analysis data set
+        
+    :param q:
+        Queue for multiprocessing
+    :param i:
+        i-th worker
+    :param X_train, Y_train:
+        Data
+    """
+
+    classifier = svm.SVC(C=c, kernel='linear')
+    classifier.fit(X_train, Y_train)
+    #print('picking %i' % i)
+    #svm_sentiment_analysis_pkl = open('pickled_models/svm_sentiment_analysis_%i.pkl' % i, 'wb')
+    #pickle.dump(classifier, svm_sentiment_analysis_pkl)
+    #print('done')
+    q.put(classifier)
 
 
 
