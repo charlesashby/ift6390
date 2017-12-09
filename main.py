@@ -198,7 +198,8 @@ if __name__ == '__main__':
 
     # Support Vector Classifier - The data set is too big for only one support vector machine,
     # We split it into smaller batch (in our case 35k samples) and run multiple SVMs in 
-    # parallel (here we run 12 on a Xeon E5-2643 v2 @ 3.50 Ghz)
+    # parallel (here we run 12 on a Xeon E5-2643 v2 @ 3.50 Ghz) - We also perform grid search
+    # on the parameter c (best value was 0.1)
 
     param_C = 5
     param_gamma = 0.05
@@ -207,12 +208,12 @@ if __name__ == '__main__':
     q = queue.Queue()
     parallel_size = int(multiprocessing.cpu_count() / 2)
     workers = []
-
-    for i in range(parallel_size):
-        workers.append(threading.Thread(target=svm_classifier_worker,
-                                        args=(X_train[i * 35000: (i+1) * 35000],
-                                              Y_train[i * 35000: (i+1) * 35000],
-                                              i, q)))
+    for c in [0.05, 0.1, 1, 5]:
+        for i in range(parallel_size):
+            workers.append(threading.Thread(target=svm_classifier_worker,
+                                            args=(X_train[i * 35000: (i+1) * 35000],
+                                                  Y_train[i * 35000: (i+1) * 35000],
+                                                  i, q, c=c)))
     for worker in workers:
         worker.start()
 
