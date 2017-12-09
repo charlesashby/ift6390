@@ -196,16 +196,41 @@ if __name__ == '__main__':
 
     X_train, Y_train = load_to_ram(train)
 
-    # Support Vector Classifier
+    # Support Vector Classifier - The data set is too big for only one support vector machine,
+    # We split it into smaller batch (in our case 35k samples) and run multiple SVMs in 
+    # parallel (here we run 12 on a Xeon E5-2643 v2 @ 3.50 Ghz)
 
     param_C = 5
     param_gamma = 0.05
     classifier = svm.SVC(C=param_C, gamma=param_gamma)
     classifier.fit(X_train, Y_train)
+    q = queue.Queue()
+    parallel_size = int(multiprocessing.cpu_count() / 2)
+    workers = []
 
+    for i in range(parallel_size):
+        workers.append(threading.Thread(target=svm_classifier_worker,
+                                        args=(X_train[i * 35000: (i+1) * 35000],
+                                              Y_train[i * 35000: (i+1) * 35000],
+                                              i, q)))
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()
+    
+    print("Training finished")
+    
+    classifiers = []
+    while not q.empty():
+        classifiers.append(q.get())
+       
     X_test, Y_test = load_to_ram(test)
+    predictions = [classifier.predict(X_test) for classifier in classifiers]
+    predictions = np.array(predictions)
+    pred = np.argmax(predictions, axis=0)
+    predicted_classes = [int(predictions[pred[i]][i]) for i in range(pred.shape[0])]
     expected_classes = Y_test
-    predicted_classes = classifier.predict(X_test)
     cm = metrics.confusion_matrix(expected_classes, predicted_classes)
 
     # Waiting on results... Best accuracy so far: batch_size: 25,000 12 processes
