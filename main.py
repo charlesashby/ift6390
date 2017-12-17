@@ -157,6 +157,8 @@ if __name__ == '__main__':
     # >>> conf_matrix_full
     # >>> [[49965,    35],
     #      [   25,    68]]
+    # precision: 0.66019
+    # recall: 0.731182
 
     # Neural Network
     neural_net = FeedForwardNN([trunc_train_x, trunc_train_y, trunc_valid_x,
@@ -172,6 +174,8 @@ if __name__ == '__main__':
     # [    9    84]]   #
     #                  #
     # ---------------- #
+    # precision: 0.032495
+    # recall: 0.90322
 
     # Bayes Classifier
     gaussian_estimator = DiagonalGaussian(nb_dims=trunc_train_x.shape[1])
