@@ -5,7 +5,7 @@ from utils.data import *
 from sklearn import svm
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import validation_curve
-
+ from sklearn.naive_bayes import GaussianNB
 
 if __name__ == '__main__':
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     predictions_full = np.int64(model.predict(test_x) >= 0)
     test_y = np.array([1 if test_y[i][0] == '0' else 0 for i in range(test_y.shape[0])])
     conf_matrix_full = confusion_matrix(y_true=test_y, y_pred=predictions_full)
-
+    
     # On the full test set
     # >>> conf_matrix_full
     # >>> [[49965,    35],
@@ -160,6 +160,18 @@ if __name__ == '__main__':
     # precision: 0.66019
     # recall: 0.731182
 
+    # Support Vector Machine (RBF kernel)
+    model = SVM(max_iter=10000, kernel_type='linear', C=1.0, epsilon=0.001)
+    model.fit(trunc_train_x, trunc_train_y)
+    predictions = np.int64(model.predict(trunc_test_x) >= 0)
+    conf_matrix = confusion_matrix(y_true=trunc_test_y, y_pred=predictions)
+    
+    # quadratic kernel results
+    # [[48956,  1044],
+    #  [   17,    76]]
+    # precision: 0.06785
+    # recall: 0.81720
+    
     # Neural Network
     neural_net = FeedForwardNN([trunc_train_x, trunc_train_y, trunc_valid_x,
                                trunc_valid_y, trunc_test_x, trunc_test_y])
@@ -178,17 +190,16 @@ if __name__ == '__main__':
     # recall: 0.90322
 
     # Bayes Classifier
-    gaussian_estimator = DiagonalGaussian(nb_dims=trunc_train_x.shape[1])
-    gaussian_estimator.train(trunc_train_x)
+   
+    gnb = GaussianNB()
+    y_pred = gnb.fit(trunc_train_x, trunc_train_y).predict(test_x)
 
-    bayes_net = BayesClassifier(gaussian_estimator)
-    bayes_net.train(training_data=trunc_train_x, training_labels=trunc_train_y)
-    predicted_classes = bayes_net.compute_predictions(trunc_test_x)
-    correct_classes = trunc_test_y
-    error_rate = 1. - np.mean(predicted_classes == correct_classes)
-
-    # Results for Bayes Classifier goes here...
-
+    # confusion matrix
+    # [[48631,  1369],
+    #  [   15,    78]]
+    # recall: 0.83870
+    # precision: 0.05390
+    
     # Fraud Detection End ------------------------------------------------------------
 
     # Sentiment Analysis Start -------------------------------------------------------
