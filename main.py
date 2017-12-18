@@ -30,7 +30,7 @@ if __name__ == '__main__':
     nn.build()
     nn.train()
     nn.compute_confusion_matrix()
-    # accuracy for hp [64, 128, 256, 512]: [0.973, 0.9782, 0.98, ]
+    # accuracy for hp [64, 128, 256, 512]: [0.973, 0.9782, 0.98, 0.9808]
     # >>> accuracy: 0.9800
 
     # Support Vector Classifier for MNIST
