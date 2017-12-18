@@ -287,7 +287,7 @@ if __name__ == '__main__':
     neural_net.build()
     neural_net.train()
     tt = neural_net.compute_confusion_matrix()
-    # accuracy for hp h [64, 128, 256, 512]: [0.76105, 0.7631, 0.78036, ]
+    # accuracy for hp h [64, 128, 256, 512]: [0.773, 0.777525, 0.78036, ]
     # accuracy: 0.78036249
 
     # Sentiment Analysis End ---------------------------------------------------------
